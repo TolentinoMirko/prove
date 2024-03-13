@@ -1,5 +1,9 @@
-import { Component } from '@angular/core';
-import { FormControl, FormGroup } from '@angular/forms';
+import { Component, OnInit ,ViewChild} from '@angular/core';
+import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { ReplaySubject } from 'rxjs/internal/ReplaySubject';
+import { Subject } from 'rxjs/internal/Subject';
+import { takeUntil } from 'rxjs/operators';
+import { MatLegacySelect as MatSelect } from '@angular/material/legacy-select';
 
 @Component({
   selector: 'app-stringhe',
@@ -8,62 +12,85 @@ import { FormControl, FormGroup } from '@angular/forms';
 })
 export class StringheComponent {
   name = "Angular"
-  
-  unfilteredDataToSearch: string[] = [
-    "Atlanta Hawks - ATL(Atlanta)",
-    "Boston Celtics - BOS(Boston)",
-    "Brooklyn Nets - BKN(Brooklyn)",
-    "Charlotte Hornets - CHA(Charlotte)",
-    "Chicago Bulls - CHI(Chicago)",
-    "Cleveland Cavaliers - CLE(Cleveland)",
-    "Dallas Mavericks - DAL(Dallas)",
-    "Denver Nuggets - DEN(Denver)",
-    "Detroit Pistons - DET(Detroit)",
-    "Golden State Warriors - GSW(Golden State)",
-    "Houston Rockets - HOU(Houston)",
-    "Indiana Pacers - IND(Indiana)",
-    "Los Angeles Clippers - LAC(Los Angeles)",
-    "Los Angeles Lakers - LAL(Los Angeles)",
-    "Memphis Grizzlies - MEM(Memphis)",
-    "Miami Heat - MIA(Miami)",
-    "Milwaukee Bucks - MIL(Milwaukee)",
-    "Minnesota Timberwolves - MIN(Minnesota)",
-    "New Orleans Pelicans - NOP(New Orleans)",
-    "New York Knicks - NYK(New York)",
-    "Oklahoma City Thunder - OKC(Oklahoma City)",
-    "Orlando Magic - ORL(Orlando)",
-    "Philadelphia 76ers - PHI(Philadelphia)",
-    "Phoenix Suns - PHX(Phoenix)",
-    "Portland Trail Blazers - POR(Portland)",
-    "Sacramento Kings - SAC(Sacramento)",
-    "San Antonio Spurs - SAS(San Antonio)",
-    "Toronto Raptors - TOR(Toronto)",
-    "Utah Jazz - UTA(Utah)",
-    "Washington Wizards - WAS(Washington)"
-  ];
-  filteredDataToSearch: string[] = [];
 
-  public beComponentForm: FormGroup = new FormGroup({
-    slct_cntrl: new FormControl("")
-  });
+  protected banks: string[] = [
+    'Bank A',
+    'Bank B',
+    'Bank C',
+    // Add more banks as needed
+  ];
+
+  /** Control for the selected bank */
+  public bankCtrl: FormControl = new FormControl(null);
+
+  /** Control for the MatSelect filter keyword */
+  public bankFilterCtrl: FormControl = new FormControl('');
+
+  /** List of banks filtered by search keyword */
+  public filteredBanks: ReplaySubject<string[]> = new ReplaySubject<string[]>(1);
+
+  @ViewChild('singleSelect', { static: true }) singleSelect!: MatSelect;
+
+  /** Subject that emits when the component has been destroyed. */
+  protected _onDestroy = new Subject<void>();
+
+  constructor() { }
 
   ngOnInit() {
-    this.filteredDataToSearch = this.unfilteredDataToSearch;
+    // Set initial selection
+    this.bankCtrl.setValue(this.banks[0]);
+
+    // Load the initial bank list
+    this.filteredBanks.next(this.banks.slice());
+
+    // Listen for search field value changes
+    this.bankFilterCtrl.valueChanges
+      .pipe(takeUntil(this._onDestroy))
+      .subscribe(() => {
+        this.filterBanks();
+      });
   }
 
-  lookup(e:any) {
-    this.filteredDataToSearch = this.unfilteredDataToSearch
-      .filter(
-        i =>
-          i.toString()
-            .toLowerCase()
-            .indexOf(e) > -1
-      );
+  ngAfterViewInit() {
+    this.setInitialValue();
   }
 
-  clean(t:any){
-    t.value = '';
-    this.lookup(t.value);
+  ngOnDestroy() {
+    this._onDestroy.next();
+    this._onDestroy.complete();
   }
+
+  /**
+   * Sets the initial value after the filteredBanks are loaded initially
+   */
+  protected setInitialValue() {
+    this.filteredBanks
+      .pipe(takeUntil(this._onDestroy))
+      .subscribe(() => {
+        this.singleSelect.compareWith = (a: string, b: string) => {
+          // Restituisci true se le due stringhe sono uguali, altrimenti false
+          return a === b;
+        };
+      });
+}
+
+  protected filterBanks() {
+    if (!this.banks) {
+      return;
+    }
+    // Get the search keyword
+    let search = this.bankFilterCtrl.value;
+    if (!search) {
+      this.filteredBanks.next(this.banks.slice());
+      return;
+    } else {
+      search = search.toLowerCase();
+    }
+    // Filter the banks
+    this.filteredBanks.next(
+      this.banks.filter(bank => bank.toLowerCase().indexOf(search) > -1)
+    );
+  }
+
 
 }

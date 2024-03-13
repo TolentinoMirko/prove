@@ -9,6 +9,8 @@ import {MatCardModule} from '@angular/material/card';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { StringheComponent } from './stringhe/stringhe.component';
 import { MatDialogModule } from '@angular/material/dialog';
+import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
+
 
 @NgModule({
   declarations: [
@@ -19,12 +21,13 @@ import { MatDialogModule } from '@angular/material/dialog';
     BrowserModule,
     AppRoutingModule,
     FormsModule,
-     MatInputModule,
-     MatSelectModule, 
-     ReactiveFormsModule, 
-     BrowserAnimationsModule,
+    MatInputModule,
+    MatSelectModule, 
+    ReactiveFormsModule, 
+    BrowserAnimationsModule,
     MatCardModule,
-    MatDialogModule
+    MatDialogModule,
+    NgxMatSelectSearchModule
   ],
   providers: [],
   bootstrap: [AppComponent]
